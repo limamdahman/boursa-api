@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\Api\EnsureUserRole;
+use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +20,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
+
+        // CSRF: exclure les routes API (token Sanctum suffit)
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
+
+        // Force JSON sur toutes les requêtes /api/*
+        $middleware->append(ForceJsonResponse::class);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,

@@ -103,4 +103,12 @@ class Vehicle extends Model
         return $query->whereNotNull('published_at')
             ->where('published_at', '<=', now());
     }
+
+    public function scopeNearby(Builder $query, float $lat, float $lng, int $radiusMeters): Builder
+    {
+        return $query
+            ->selectRaw('vehicles.*, ST_Distance(vehicles.location, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography) / 1000 AS distance_km', [$lng, $lat])
+            ->whereRaw('ST_DWithin(vehicles.location, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, ?)', [$lng, $lat, $radiusMeters])
+            ->orderByRaw('ST_Distance(vehicles.location, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography)', [$lng, $lat]);
+    }
 }
