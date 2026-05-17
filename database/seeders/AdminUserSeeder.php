@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['phone' => '22244000001'],
             [
                 'name' => 'Boursa Admin',
@@ -25,6 +25,8 @@ class AdminUserSeeder extends Seeder
                 'language' => 'fr',
             ]
         );
+
+        $admin->syncRoles([UserRole::ADMIN->value]);
 
         $this->command->info('  Admin user created (phone: 22244000001 / password: admin1234)');
     }
