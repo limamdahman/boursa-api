@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Agency\AgencyProfileController;
+use App\Http\Controllers\Api\Agency\AgencyVehicleController;
+use App\Http\Controllers\Api\Agency\AgencyVehicleMediaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use Illuminate\Http\Request;
@@ -30,13 +33,14 @@ Route::prefix('v1')->group(function () {
             ->where('id', '[0-9a-fA-F\-]{36}');
     });
 
-    // Auth (protégés)
+    // Authentifié
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/logout/all', [AuthController::class, 'logoutAll']);
 
         Route::get('/me', fn (Request $request) => $request->user()->load('agency'));
 
+        // Admin
         Route::middleware('role.boursa:admin')->prefix('admin')->group(function () {
             Route::get('/dashboard', fn (Request $request) => response()->json([
                 'message' => 'Welcome admin',
@@ -44,10 +48,31 @@ Route::prefix('v1')->group(function () {
             ]));
         });
 
+        // Agency
         Route::middleware('role.boursa:agency')->prefix('agency')->group(function () {
-            Route::get('/dashboard', fn () => response()->json([
-                'message' => 'Welcome agency',
-            ]));
+            Route::get('/profile', [AgencyProfileController::class, 'show']);
+            Route::put('/profile', [AgencyProfileController::class, 'update']);
+
+            Route::prefix('vehicles')->group(function () {
+                Route::get('/', [AgencyVehicleController::class, 'index']);
+                Route::post('/', [AgencyVehicleController::class, 'store']);
+                Route::get('/{id}', [AgencyVehicleController::class, 'show'])
+                    ->where('id', '[0-9a-fA-F\-]{36}');
+                Route::put('/{id}', [AgencyVehicleController::class, 'update'])
+                    ->where('id', '[0-9a-fA-F\-]{36}');
+                Route::delete('/{id}', [AgencyVehicleController::class, 'destroy'])
+                    ->where('id', '[0-9a-fA-F\-]{36}');
+                Route::post('/{id}/publish', [AgencyVehicleController::class, 'publish'])
+                    ->where('id', '[0-9a-fA-F\-]{36}');
+
+                Route::post('/{id}/media', [AgencyVehicleMediaController::class, 'store'])
+                    ->where('id', '[0-9a-fA-F\-]{36}');
+                Route::patch('/{id}/media/reorder', [AgencyVehicleMediaController::class, 'reorder'])
+                    ->where('id', '[0-9a-fA-F\-]{36}');
+                Route::delete('/{vehicleId}/media/{mediaId}', [AgencyVehicleMediaController::class, 'destroy'])
+                    ->where('vehicleId', '[0-9a-fA-F\-]{36}')
+                    ->where('mediaId', '[0-9a-fA-F\-]{36}');
+            });
         });
     });
 });
