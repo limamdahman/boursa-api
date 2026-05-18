@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\Agency\AgencyProfileController;
 use App\Http\Controllers\Api\Agency\AgencyVehicleController;
 use App\Http\Controllers\Api\Agency\AgencyVehicleMediaController;
+use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +32,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}', [VehicleController::class, 'show'])
             ->where('id', '[0-9a-fA-F\-]{36}');
         Route::get('/{id}/similar', [VehicleController::class, 'similar'])
+            ->where('id', '[0-9a-fA-F\-]{36}');
+
+        Route::post('/{id}/lead', [LeadController::class, 'store'])
+            ->where('id', '[0-9a-fA-F\-]{36}');
+
+        Route::post('/{id}/track-view', [AnalyticsController::class, 'trackView'])
             ->where('id', '[0-9a-fA-F\-]{36}');
     });
 

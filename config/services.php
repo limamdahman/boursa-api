@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
 
     /*
@@ -35,10 +37,18 @@ return [
         ],
     ],
 
-'sms' => [
-    'driver' => env('SMS_PROVIDER', 'log'),
-    'sender_id' => env('SMS_SENDER_ID', 'BOURSA'),
-    'api_key' => env('SMS_API_KEY'),
-],
+    'sms' => [
+        'driver' => env('SMS_PROVIDER', 'log'),
+        'sender_id' => env('SMS_SENDER_ID', 'BOURSA'),
+        'api_key' => env('SMS_API_KEY'),
+    ],
+
+    'meta' => [
+        'app_id' => env('META_APP_ID'),
+        'app_secret' => env('META_APP_SECRET'),
+        'pixel_id' => env('META_PIXEL_ID'),
+        'capi_access_token' => env('META_CAPI_ACCESS_TOKEN'),
+        'capi_test_event_code' => env('META_CAPI_TEST_EVENT_CODE'),
+    ],
 
 ];
