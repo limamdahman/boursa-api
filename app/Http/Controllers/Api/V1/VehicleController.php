@@ -10,6 +10,7 @@ use App\Http\Requests\Vehicles\ListVehiclesRequest;
 use App\Http\Resources\V1\VehicleListResource;
 use App\Http\Resources\V1\VehicleResource;
 use App\Models\Vehicle;
+use App\Services\Search\SearchQueryParser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -19,13 +20,28 @@ class VehicleController extends Controller
     {
         $filters = $request->validated();
 
+        // Parser q et merger avec les filtres explicites
+        $fulltext = null;
+        $parsedFilters = [];
+        $parsedChips = [];
+        if (! empty($filters['q'])) {
+            $parser = app(SearchQueryParser::class);
+            $parsed = $parser->parse($filters['q'], app()->getLocale());
+            $fulltext = $parsed['fulltext'] ?? null;
+            $parsedFilters = $parsed['filters'] ?? [];
+            $parsedChips = $parsed['parsed_chips'] ?? [];
+            foreach ($parsedFilters as $k => $v) {
+                if (empty($filters[$k])) $filters[$k] = $v;
+            }
+        }
+
         $query = Vehicle::query()
             ->with(['brand:id,name,slug', 'vehicleModel:id,name', 'city:id,name_fr,name_ar', 'coverMedia'])
             ->where('status', VehicleStatus::ACTIVE->value)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
 
-        foreach (['brand_id', 'vehicle_model_id', 'city_id', 'fuel', 'transmission', 'body_type', 'condition'] as $field) {
+        foreach (['brand_id', 'vehicle_model_id', 'city_id', 'agency_id', 'fuel', 'transmission', 'body_type', 'condition'] as $field) {
             if (! empty($filters[$field])) {
                 $query->where($field, $filters[$field]);
             }
@@ -45,6 +61,10 @@ class VehicleController extends Controller
         }
         if (isset($filters['mileage_max'])) {
             $query->where('mileage_km', '<=', $filters['mileage_max']);
+        }
+
+        if (! empty($filters['exclude'])) {
+            $query->where('id', '!=', $filters['exclude']);
         }
 
         $hasGeo = isset($filters['lat'], $filters['lng'], $filters['radius_km']);
@@ -69,7 +89,19 @@ class VehicleController extends Controller
 
         $perPage = (int) ($filters['per_page'] ?? 20);
 
-        return VehicleListResource::collection($query->paginate($perPage));
+        $collection = VehicleListResource::collection($query->paginate($perPage));
+
+        // Inclure les infos de parsing dans meta (lecture frontend pour chips + sidebar)
+        if (! empty($parsedFilters) || ! empty($parsedChips)) {
+            $collection->additional([
+                'meta' => [
+                    'parsed_filters' => $parsedFilters,
+                    'parsed_chips' => $parsedChips,
+                ],
+            ]);
+        }
+
+        return $collection;
     }
 
     public function show(string $id): VehicleResource|JsonResponse
@@ -79,7 +111,8 @@ class VehicleController extends Controller
                 'brand',
                 'vehicleModel',
                 'city',
-                'agency:id,name,slug,logo_url,phone_whatsapp,phone_call,status',
+                'user', 'agency',
+                'agency.city',
                 'media',
             ])
             ->where('status', VehicleStatus::ACTIVE->value)
@@ -106,18 +139,61 @@ class VehicleController extends Controller
             return response()->json(['message' => 'Véhicule introuvable.'], 404);
         }
 
-        $similar = Vehicle::query()
+        $minPrice = (int) ($vehicle->price_mru * 0.7);
+        $maxPrice = (int) ($vehicle->price_mru * 1.3);
+
+        // Stratégie progressive : même brand → même body_type → fallback active
+        $baseQuery = fn () => Vehicle::query()
             ->with(['brand:id,name,slug', 'vehicleModel:id,name', 'city:id,name_fr', 'coverMedia'])
             ->where('status', VehicleStatus::ACTIVE->value)
-            ->where('id', '!=', $vehicle->id)
+            ->where('id', '!=', $vehicle->id);
+
+        // 1. Même brand + prix proche
+        $similar = $baseQuery()
             ->where('brand_id', $vehicle->brand_id)
-            ->whereBetween('price_mru', [
-                (int) ($vehicle->price_mru * 0.7),
-                (int) ($vehicle->price_mru * 1.3),
-            ])
+            ->whereBetween('price_mru', [$minPrice, $maxPrice])
             ->orderByDesc('published_at')
             ->limit(6)
             ->get();
+
+        // 2. Si insuffisant, même body_type + prix proche
+        if ($similar->count() < 4 && $vehicle->body_type) {
+            $needed = 6 - $similar->count();
+            $excluded = $similar->pluck('id')->push($vehicle->id);
+            $more = $baseQuery()
+                ->whereNotIn('id', $excluded)
+                ->where('body_type', $vehicle->body_type)
+                ->whereBetween('price_mru', [$minPrice, $maxPrice])
+                ->orderByDesc('published_at')
+                ->limit($needed)
+                ->get();
+            $similar = $similar->concat($more);
+        }
+
+        // 3. Fallback : n'importe quel actif récent dans la même tranche de prix
+        if ($similar->count() < 4) {
+            $needed = 6 - $similar->count();
+            $excluded = $similar->pluck('id')->push($vehicle->id);
+            $more = $baseQuery()
+                ->whereNotIn('id', $excluded)
+                ->whereBetween('price_mru', [$minPrice * 0.5, $maxPrice * 1.5])
+                ->orderByDesc('published_at')
+                ->limit($needed)
+                ->get();
+            $similar = $similar->concat($more);
+        }
+
+        // 4. Dernier fallback : n'importe quel actif récent
+        if ($similar->count() < 4) {
+            $needed = 6 - $similar->count();
+            $excluded = $similar->pluck('id')->push($vehicle->id);
+            $more = $baseQuery()
+                ->whereNotIn('id', $excluded)
+                ->orderByDesc('published_at')
+                ->limit($needed)
+                ->get();
+            $similar = $similar->concat($more);
+        }
 
         return VehicleListResource::collection($similar);
     }

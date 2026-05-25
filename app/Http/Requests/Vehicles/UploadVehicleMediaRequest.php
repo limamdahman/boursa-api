@@ -10,7 +10,7 @@ class UploadVehicleMediaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null && $this->user()->isAgency();
+        return $this->user() !== null;
     }
 
     public function rules(): array

@@ -5,12 +5,19 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\Agency\AgencyProfileController;
 use App\Http\Controllers\Api\Agency\AgencyVehicleController;
 use App\Http\Controllers\Api\Agency\AgencyVehicleMediaController;
+use App\Http\Controllers\Api\User\NotificationController;
+use App\Http\Controllers\Api\User\UserVehicleController;
 use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\CityController;
+use App\Http\Controllers\Api\V1\AgencyController as PublicAgencyController;
+use App\Http\Controllers\Api\V1\ReviewController;
+use App\Http\Controllers\Api\V1\SellerProfileController;
+use App\Http\Controllers\Api\V1\ReverseGeocodeController;
+use App\Http\Controllers\Api\V1\SellerFollowController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [VehicleController::class, 'index']);
         Route::get('/{id}', [VehicleController::class, 'show'])
             ->where('id', '[0-9a-fA-F\-]{36}');
+
         Route::get('/{id}/similar', [VehicleController::class, 'similar'])
             ->where('id', '[0-9a-fA-F\-]{36}');
 
@@ -47,6 +55,27 @@ Route::prefix('v1')->group(function () {
         Route::post('/{id}/track-view', [AnalyticsController::class, 'trackView'])
             ->where('id', '[0-9a-fA-F\-]{36}');
     });
+
+    // Agencies (public)
+    Route::get('/agencies', [PublicAgencyController::class, 'index']);
+    Route::get('/geocode/reverse', [ReverseGeocodeController::class, 'reverse']);
+    Route::get('/agencies/{slug}', [PublicAgencyController::class, 'show'])
+        ->where('slug', '[a-zA-Z0-9\-]+');
+
+    // Reviews (public read)
+    Route::get('/sellers/users/{userId}', [SellerProfileController::class, 'show'])
+        ->where('userId', '[0-9a-fA-F\-]{36}');
+    Route::get('/sellers/{sellerType}/{sellerId}/followers-count', [SellerFollowController::class, 'followersCount'])
+        ->where('sellerType', 'user|agency')
+        ->where('sellerId', '[0-9a-fA-F\-]{36}');
+    Route::get('/sellers/users/{userId}/reviews', [ReviewController::class, 'userReviews'])
+        ->where('userId', '[0-9a-fA-F\-]{36}');
+    Route::get('/sellers/users/{userId}/rating-summary', [ReviewController::class, 'userRatingSummary'])
+        ->where('userId', '[0-9a-fA-F\-]{36}');
+    Route::get('/sellers/agencies/{agencyId}/reviews', [ReviewController::class, 'agencyReviews'])
+        ->where('agencyId', '[0-9a-fA-F\-]{36}');
+    Route::get('/sellers/agencies/{agencyId}/rating-summary', [ReviewController::class, 'agencyRatingSummary'])
+        ->where('agencyId', '[0-9a-fA-F\-]{36}');
 
     // Authentifié
     Route::middleware('auth:sanctum')->group(function () {
@@ -61,6 +90,45 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout/all', [AuthController::class, 'logoutAll']);
 
         Route::get('/me', fn (Request $request) => $request->user()->load('agency'));
+        Route::put('/me', [AuthController::class, 'updateProfile']);
+        Route::put('/me/password', [AuthController::class, 'updatePassword']);
+
+        // Mes véhicules (particuliers — auth required, pas de middleware role)
+        Route::prefix('me/vehicles')->group(function () {
+            Route::get('/', [UserVehicleController::class, 'index']);
+            Route::post('/', [UserVehicleController::class, 'store']);
+            Route::get('/{id}', [UserVehicleController::class, 'show'])
+                ->where('id', '[0-9a-fA-F\-]{36}');
+            Route::put('/{id}', [UserVehicleController::class, 'update'])
+                ->where('id', '[0-9a-fA-F\-]{36}');
+            Route::delete('/{id}', [UserVehicleController::class, 'destroy'])
+                ->where('id', '[0-9a-fA-F\-]{36}');
+            Route::post('/{id}/media', [UserVehicleController::class, 'uploadMedia'])
+                ->where('id', '[0-9a-fA-F\-]{36}');
+            Route::delete('/{vehicleId}/media/{mediaId}', [UserVehicleController::class, 'destroyMedia'])
+                ->where('vehicleId', '[0-9a-fA-F\-]{36}')
+                ->where('mediaId', '[0-9a-fA-F\-]{36}');
+            Route::post('/{vehicleId}/media/{mediaId}/cover', [UserVehicleController::class, 'setCoverMedia'])
+                ->where('vehicleId', '[0-9a-fA-F\-]{36}')
+                ->where('mediaId', '[0-9a-fA-F\-]{36}');
+        });
+
+        // Reviews (submit + can)
+        Route::post('/reviews', [ReviewController::class, 'store']);
+        Route::post('/seller-follows/toggle', [SellerFollowController::class, 'toggle']);
+        Route::get('/seller-follows/is-following', [SellerFollowController::class, 'isFollowing']);
+        Route::get('/me/seller-follows', [SellerFollowController::class, 'myFollows']);
+        Route::get('/vehicles/{id}/can-review', [ReviewController::class, 'canReview'])
+            ->where('id', '[0-9a-fA-F\-]{36}');
+
+        // Notifications
+        Route::prefix('me/notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index']);
+            Route::get('/recent', [NotificationController::class, 'recent']);
+            Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+            Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+            Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+        });
 
         // Admin
         Route::middleware('role.boursa:admin')->prefix('admin')->group(function () {

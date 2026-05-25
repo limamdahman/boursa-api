@@ -12,9 +12,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\SendOtpRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
+use App\Http\Requests\Auth\UpdatePasswordRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use DomainException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
@@ -141,5 +144,38 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->json(['message' => 'Toutes les sessions ont été révoquées.']);
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Profil mis à jour',
+            'user' => $user->fresh()->load('agency'),
+        ]);
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->validated();
+
+        // Si l'utilisateur a déjà un password, vérifier l'ancien
+        if ($user->password) {
+            if (! isset($data['current_password']) || ! Hash::check($data['current_password'], $user->password)) {
+                return response()->json([
+                    'message' => 'Mot de passe actuel incorrect.',
+                    'errors' => ['current_password' => ['validation.password.current']],
+                ], 422);
+            }
+        }
+
+        $user->update(['password' => Hash::make($data['new_password'])]);
+
+        return response()->json(['message' => 'Mot de passe mis à jour.']);
     }
 }

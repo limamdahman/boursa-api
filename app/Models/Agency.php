@@ -21,6 +21,7 @@ class Agency extends Model
         'name',
         'slug',
         'logo_url',
+        'banner_url',
         'description',
         'address',
         'city_id',
@@ -67,4 +68,43 @@ class Agency extends Model
     {
         return $this->status === AgencyStatus::VERIFIED;
     }
+
+    /**
+     * Transforme logo_url (path) en URL complète MinIO.
+     */
+    public function getLogoUrlAttribute(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+        // Si déjà une URL complète, retourner tel quel
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+        // Sinon construire l'URL via Storage
+        try {
+            return \Illuminate\Support\Facades\Storage::disk('s3')->url($value);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Transforme banner_url (path) en URL complète MinIO.
+     */
+    public function getBannerUrlAttribute(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+        try {
+            return \Illuminate\Support\Facades\Storage::disk('s3')->url($value);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
 }

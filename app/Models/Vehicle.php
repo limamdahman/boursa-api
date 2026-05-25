@@ -26,6 +26,10 @@ class Vehicle extends Model
         'mileage_km',
         'price_mru',
         'price_negotiable',
+        'price_rating',
+        'price_score',
+        'price_benchmark_data',
+        'price_rating_computed_at',
         'currency',
         'fuel',
         'transmission',
@@ -45,6 +49,10 @@ class Vehicle extends Model
     {
         return [
             'price_negotiable' => 'boolean',
+            'price_rating' => \App\Enums\PriceRating::class,
+            'price_score' => 'decimal:4',
+            'price_benchmark_data' => 'array',
+            'price_rating_computed_at' => 'datetime',
             'specs' => 'array',
             'status' => VehicleStatus::class,
             'published_at' => 'datetime',

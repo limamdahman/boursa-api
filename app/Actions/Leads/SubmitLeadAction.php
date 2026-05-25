@@ -11,6 +11,8 @@ use App\Models\AnalyticsEvent;
 use App\Models\Lead;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Notifications\NewLeadOnVehicleNotification;
+use Filament\Notifications\Notification as FilamentNotification;
 use App\Services\Meta\MetaEventBuilder;
 use DomainException;
 use Illuminate\Http\Request;
@@ -91,6 +93,32 @@ final class SubmitLeadAction
             );
 
             SendMetaCapiEventJob::dispatch($payload);
+
+            // Notifier le propriétaire du véhicule
+            // Priorité : agency.user (si annonce d'agence) sinon vehicle.user (si particulier)
+            $owner = $vehicle->agency?->user ?? $vehicle->user;
+            if ($owner && (!$user || $owner->id !== $user->id)) {
+                $owner->notify(new NewLeadOnVehicleNotification($lead, $vehicle));
+
+                // Notification Filament native pour la cloche du panel agence
+                $brand = $vehicle->brand?->name ?? '';
+                $model = $vehicle->vehicleModel?->name ?? '';
+                $year = $vehicle->year ?? '';
+                $vehicleLabel = trim($brand . ' ' . $model . ' ' . $year);
+
+                FilamentNotification::make()
+                    ->title('Nouveau contact')
+                    ->body($lead->sender_name . ' est intéressé par votre ' . $vehicleLabel . ($lead->sender_phone ? ' • ' . $lead->sender_phone : ''))
+                    ->icon('heroicon-o-envelope')
+                    ->iconColor('warning')
+                    ->actions([
+                        \Filament\Actions\Action::make('view')
+                            ->label('Voir le contact')
+                            ->url('/agence/leads')
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($owner);
+            }
 
             return $lead->fresh();
         });

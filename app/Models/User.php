@@ -14,8 +14,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, HasRoles, HasUuid, Notifiable, SoftDeletes;
 
@@ -71,5 +73,23 @@ class User extends Authenticatable
     public function isAgency(): bool
     {
         return $this->role === UserRole::AGENCY;
+    }
+
+    /**
+     * Restreint l'accès au panel Filament aux administrateurs uniquement.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Panel admin : réservé aux ADMIN uniquement
+        if ($panel->getId() === 'admin') {
+            return $this->role === UserRole::ADMIN;
+        }
+
+        // Panel agency : réservé aux AGENCY (avec une agence liée)
+        if ($panel->getId() === 'agency') {
+            return $this->role === UserRole::AGENCY && $this->agency()->exists();
+        }
+
+        return false;
     }
 }

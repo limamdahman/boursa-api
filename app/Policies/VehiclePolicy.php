@@ -42,7 +42,12 @@ class VehiclePolicy
     private function isOwner(User $user, Vehicle $vehicle): bool
     {
         $agencyId = $user->agency?->id;
-
-        return $agencyId !== null && $vehicle->agency_id === $agencyId;
+        if ($agencyId !== null && $vehicle->agency_id === $agencyId) {
+            return true;
+        }
+        if ($vehicle->agency_id === null && $vehicle->user_id === $user->id) {
+            return true;
+        }
+        return false;
     }
 }

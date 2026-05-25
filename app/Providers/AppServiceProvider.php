@@ -10,6 +10,7 @@ use App\Services\Sms\LogSmsDriver;
 use App\Services\Sms\SmsDriver;
 use App\Services\Sms\SmsManager;
 use Illuminate\Support\Facades\Gate;
+use App\Observers\VehicleObserver;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 
@@ -29,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Vehicle::observe(VehicleObserver::class);
         Gate::policy(Vehicle::class, VehiclePolicy::class);
     }
 }
