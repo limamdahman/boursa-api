@@ -42,6 +42,7 @@ class SellerProfileController extends Controller
                 'phone_whatsapp' => $user->phone,
                 'phone_call' => $user->phone,
                 'member_since' => $user->created_at?->toIso8601String(),
+                'avatar_url' => $user->avatar_url,
                 'active_listings_count' => $activeCount,
                 'vehicles' => VehicleListResource::collection($vehicles),
             ],

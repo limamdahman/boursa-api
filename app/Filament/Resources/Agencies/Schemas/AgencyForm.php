@@ -44,9 +44,14 @@ class AgencyForm
                     ->default('pending')
                     ->required(),
                 DateTimePicker::make('verified_at'),
-                TextInput::make('subscription_tier')
-                    ->required()
-                    ->default('free'),
+                \Filament\Forms\Components\Select::make('subscription_tier')
+                    ->label('Abonnement')
+                    ->options(['free' => 'Gratuit', 'pro' => 'Pro', 'business' => 'Business GOLD'])
+                    ->required(),
+                \Filament\Forms\Components\DateTimePicker::make('subscription_start')
+                    ->label('Début abonnement'),
+                \Filament\Forms\Components\DateTimePicker::make('subscription_end')
+                    ->label('Fin abonnement'),
                 TextInput::make('quota_active_listings')
                     ->required()
                     ->numeric()

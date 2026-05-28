@@ -29,6 +29,8 @@ class VehicleListResource extends JsonResource
             'year' => $this->year,
             'mileage_km' => $this->mileage_km,
             'price_mru' => $this->price_mru,
+            'original_price' => $this->original_price,
+            'is_deal' => (bool) $this->is_deal,
             'price_negotiable' => $this->price_negotiable,
             'fuel' => $this->fuel,
             'transmission' => $this->transmission,

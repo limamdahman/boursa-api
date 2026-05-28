@@ -22,6 +22,7 @@ class ListVehiclesRequest extends FormRequest
             'city_id' => ['nullable', 'integer', 'exists:cities,id'],
             'agency_id' => ['nullable', 'string', 'uuid', 'exists:agencies,id'],
             'exclude' => ['nullable', 'string', 'uuid'],
+            'is_deal' => ['nullable', 'boolean'],
             'year_min' => ['nullable', 'integer', 'min:1980', 'max:2030'],
             'year_max' => ['nullable', 'integer', 'min:1980', 'max:2030'],
             'price_min' => ['nullable', 'integer', 'min:0'],

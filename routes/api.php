@@ -92,6 +92,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', fn (Request $request) => $request->user()->load('agency'));
         Route::put('/me', [AuthController::class, 'updateProfile']);
         Route::put('/me/password', [AuthController::class, 'updatePassword']);
+        Route::post('/me/avatar', [App\Http\Controllers\Api\V1\AvatarController::class, 'upload']);
+
+        // Véhicules agence
+        Route::post('/agency/vehicles/{id}/sold', [App\Http\Controllers\Api\V1\VehicleStatusController::class, 'markSold']);
+        Route::post('/agency/vehicles/{id}/price', [App\Http\Controllers\Api\V1\VehicleStatusController::class, 'updatePrice']);
+
+        // Véhicules particulier
+        Route::post('/me/vehicles/{id}/sold', [App\Http\Controllers\Api\V1\VehicleStatusController::class, 'markSoldUser']);
+        Route::post('/me/vehicles/{id}/price', [App\Http\Controllers\Api\V1\VehicleStatusController::class, 'updatePriceUser']);
 
         // Mes véhicules (particuliers — auth required, pas de middleware role)
         Route::prefix('me/vehicles')->group(function () {
@@ -169,4 +178,14 @@ Route::prefix('v1')->group(function () {
             });
         });
     });
+
+    // ── Chat ──
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/chat/conversations/{agencyId}', [App\Http\Controllers\Api\ChatController::class, 'getOrCreate']);
+        Route::get('/chat/conversations/{conversationId}/messages', [App\Http\Controllers\Api\ChatController::class, 'messages']);
+        Route::post('/chat/conversations/{conversationId}/messages', [App\Http\Controllers\Api\ChatController::class, 'send']);
+        Route::post('/chat/support', [App\Http\Controllers\Api\ChatController::class, 'getOrCreateSupport']);
+        Route::get('/chat/agency/conversations', [App\Http\Controllers\Api\ChatController::class, 'agencyConversations']);
+    });
 });
+

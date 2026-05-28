@@ -66,6 +66,9 @@ class VehicleController extends Controller
         if (! empty($filters['exclude'])) {
             $query->where('id', '!=', $filters['exclude']);
         }
+        if (array_key_exists('is_deal', $filters) && $filters['is_deal']) {
+            $query->where('is_deal', true);
+        }
 
         $hasGeo = isset($filters['lat'], $filters['lng'], $filters['radius_km']);
         if ($hasGeo) {

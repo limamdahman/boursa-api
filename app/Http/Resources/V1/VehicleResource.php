@@ -30,7 +30,9 @@ class VehicleResource extends JsonResource
             ]),
             'year' => $this->year,
             'mileage_km' => $this->mileage_km,
-            'price_mru' => $this->price_mru,
+            'price_mru'      => $this->price_mru,
+            'original_price' => $this->original_price,
+            'is_deal'        => (bool) $this->is_deal,
             'price_negotiable' => $this->price_negotiable,
             'price_rating' => $this->price_rating?->value,
             'price_rating_label' => $this->price_rating?->label(),
@@ -104,6 +106,7 @@ class VehicleResource extends JsonResource
                 return [
                     'id' => $u->id,
                     'name' => $u->name,
+                    'avatar_url' => $u->avatar_url,
                     'phone_whatsapp' => $u->phone,
                     'phone_call' => $u->phone,
                     'is_individual' => true,

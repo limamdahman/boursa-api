@@ -41,6 +41,8 @@ class Vehicle extends Model
         'city_id',
         'specs',
         'status',
+        'original_price',
+        'is_deal',
         'published_at',
         'expires_at',
     ];

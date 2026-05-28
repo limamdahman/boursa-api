@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Filament\Agency\Resources\Vehicles\Tables;
 
 use App\Enums\VehicleStatus;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -93,6 +97,40 @@ class VehiclesTable
                     ]),
             ])
             ->recordActions([
+                Action::make('sold')
+                    ->label('Marquer vendue')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Marquer comme vendue ?')
+                    ->modalDescription('Cette annonce sera masquee du site.')
+                    ->visible(fn ($record) => $record->status !== VehicleStatus::SOLD)
+                    ->action(function ($record) {
+                        $record->update(['status' => VehicleStatus::SOLD]);
+                        Notification::make()->title('Marque comme vendu')->success()->send();
+                    }),
+                Action::make('reduce_price')
+                    ->label('Reduire le prix')
+                    ->icon('heroicon-o-tag')
+                    ->color('warning')
+                    ->form([
+                        TextInput::make('new_price')
+                            ->label('Nouveau prix (MRU)')
+                            ->numeric()
+                            ->required()
+                            ->minValue(1),
+                        Toggle::make('is_deal')
+                            ->label('Badge DEAL')
+                            ->default(true),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $originalPrice = $record->original_price ?? $record->price_mru;
+                        $record->original_price = $originalPrice;
+                        $record->price_mru = (int) $data['new_price'];
+                        $record->is_deal = $data['is_deal'];
+                        $record->save();
+                        Notification::make()->title('Prix mis a jour')->success()->send();
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

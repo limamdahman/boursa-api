@@ -16,6 +16,25 @@ final class CreateVehicleAction
      */
     public function execute(Agency $agency, array $data): Vehicle
     {
+        // ── Vérification quota selon tier ──
+        $tier = $agency->subscription_tier ?? 'free';
+        if ($tier === 'free') {
+            $activeCount = Vehicle::where('agency_id', $agency->id)
+                ->whereIn('status', ['active', 'draft'])
+                ->count();
+            if ($activeCount >= 10) {
+                throw new \Illuminate\Validation\ValidationException(
+                    validator([], []),
+                    response()->json([
+                        'message' => 'Quota atteint. La formule Gratuite est limitée à 10 annonces. Passez à Pro pour des annonces illimitées.',
+                        'error'   => 'quota_exceeded',
+                        'limit'   => 10,
+                        'current' => $activeCount,
+                    ], 422)
+                );
+            }
+        }
+
         return DB::transaction(function () use ($agency, $data): Vehicle {
             $lat = $data['latitude'] ?? null;
             $lng = $data['longitude'] ?? null;

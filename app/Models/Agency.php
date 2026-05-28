@@ -33,6 +33,8 @@ class Agency extends Model
         'status',
         'verified_at',
         'subscription_tier',
+        'subscription_start',
+        'subscription_end',
         'quota_active_listings',
     ];
 
@@ -40,6 +42,8 @@ class Agency extends Model
     {
         return [
             'verified_at' => 'datetime',
+            'subscription_start' => 'datetime',
+            'subscription_end' => 'datetime',
             'status' => AgencyStatus::class,
         ];
     }
