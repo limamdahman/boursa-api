@@ -7,6 +7,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Admin\Actions\ExportCsvAction;
+use App\Models\Lead;
 use Filament\Tables\Table;
 
 class LeadsTable
@@ -14,6 +16,22 @@ class LeadsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->headerActions([
+                ExportCsvAction::make(
+                    'leads_' . now()->format('Y-m-d') . '.csv',
+                    [
+                        'ID'         => 'id',
+                        'Agence'     => fn ($r) => $r->agency?->name ?? '',
+                        'Véhicule'   => fn ($r) => ($r->vehicle?->brand?->name ?? '') . ' ' . ($r->vehicle?->vehicleModel?->name ?? ''),
+                        'Nom'        => 'name',
+                        'Téléphone'  => 'phone',
+                        'Message'    => 'message',
+                        'Type'       => 'type',
+                        'Date'       => fn ($r) => $r->created_at?->format('d/m/Y H:i') ?? '',
+                    ],
+                    Lead::with(['agency', 'vehicle.brand', 'vehicle.vehicleModel'])->latest()
+                ),
+            ])
             ->columns([
                 TextColumn::make('id')
                     ->label('ID'),

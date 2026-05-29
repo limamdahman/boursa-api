@@ -18,21 +18,32 @@ class AgencyController extends Controller
     {
         $perPage = (int) $request->input('per_page', 12);
         $perPage = max(5, min(50, $perPage));
+        $hasFilters = $request->filled('city_id') || $request->filled('verified');
+
+        // Cache uniquement requêtes sans filtres
+        if (!$hasFilters && $perPage === 12) {
+            $paginated = \Illuminate\Support\Facades\Cache::remember('agencies.list.default', 300, function () {
+                return Agency::query()
+                    ->with('city:id,name_fr,name_ar')
+                    ->withCount(['vehicles' => fn ($q) => $q->where('status', 'active')])
+                    ->orderByRaw('CASE WHEN verified_at IS NOT NULL THEN 0 ELSE 1 END')
+                    ->orderByDesc('vehicles_count')
+                    ->orderBy('name')
+                    ->paginate(12);
+            });
+            return AgencyListResource::collection($paginated);
+        }
 
         $query = Agency::query()
             ->with('city:id,name_fr,name_ar')
             ->withCount(['vehicles' => fn ($q) => $q->where('status', 'active')]);
 
-        // Optional filters
         if ($request->filled('city_id')) {
             $query->where('city_id', $request->input('city_id'));
         }
-
         if ($request->filled('verified') && $request->boolean('verified')) {
             $query->whereNotNull('verified_at');
         }
-
-        // Sort : verified first, then by vehicles_count desc
         $query->orderByRaw('CASE WHEN verified_at IS NOT NULL THEN 0 ELSE 1 END')
             ->orderByDesc('vehicles_count')
             ->orderBy('name');

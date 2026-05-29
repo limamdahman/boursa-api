@@ -30,19 +30,19 @@ Route::prefix('v1')->group(function () {
 
     // Auth (public)
     Route::prefix('auth')->group(function () {
-        Route::post('/otp/send', [AuthController::class, 'sendOtp']);
+        Route::middleware('throttle:api-auth')->post('/otp/send', [AuthController::class, 'sendOtp']);
         Route::post('/otp/verify', [AuthController::class, 'verifyOtp']);
         Route::post('/register', [AuthController::class, 'register']);
-        Route::post('/login', [AuthController::class, 'login']);
+        Route::middleware('throttle:api-auth')->post('/login', [AuthController::class, 'login']);
     });
 
     // Vehicles (public)
-    Route::get('/brands', [BrandController::class, 'index']);
+    Route::middleware('throttle:api-public')->get('/brands', [BrandController::class, 'index']);
     Route::get('/brands/{id}/models', [BrandController::class, 'models'])->where('id', '[0-9]+');
-    Route::get('/cities', [CityController::class, 'index']);
+    Route::middleware('throttle:api-public')->get('/cities', [CityController::class, 'index']);
 
     Route::prefix('vehicles')->group(function () {
-        Route::get('/', [VehicleController::class, 'index']);
+        Route::middleware('throttle:api-search')->get('/', [VehicleController::class, 'index']);
         Route::get('/{id}', [VehicleController::class, 'show'])
             ->where('id', '[0-9a-fA-F\-]{36}');
 
@@ -152,9 +152,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/profile', [AgencyProfileController::class, 'show']);
             Route::put('/profile', [AgencyProfileController::class, 'update']);
 
-            Route::get('/brands', [BrandController::class, 'index']);
+            Route::middleware('throttle:api-public')->get('/brands', [BrandController::class, 'index']);
     Route::get('/brands/{id}/models', [BrandController::class, 'models'])->where('id', '[0-9]+');
-    Route::get('/cities', [CityController::class, 'index']);
+    Route::middleware('throttle:api-public')->get('/cities', [CityController::class, 'index']);
 
     Route::prefix('vehicles')->group(function () {
                 Route::get('/', [AgencyVehicleController::class, 'index']);

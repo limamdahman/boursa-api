@@ -12,6 +12,9 @@ use App\Services\Sms\SmsManager;
 use Illuminate\Support\Facades\Gate;
 use App\Observers\VehicleObserver;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,7 +33,20 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Rate limiting endpoints publics API
+        RateLimiter::for('api-public', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip());
+        });
+
+        RateLimiter::for('api-search', function (Request $request) {
+            return Limit::perMinute(60)->by($request->ip());
+        });
+
+        RateLimiter::for('api-auth', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
         Vehicle::observe(VehicleObserver::class);
         Gate::policy(Vehicle::class, VehiclePolicy::class);
     }
 }
+// Note: see boot() method

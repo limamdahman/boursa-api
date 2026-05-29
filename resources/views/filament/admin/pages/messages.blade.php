@@ -31,7 +31,7 @@
         @endforeach
     </div>
 
-    <div style="display:flex;flex-direction:column;height:100%;">
+    <div style="display:flex;flex-direction:column;height:calc(100vh - 200px);">
         @if($this->activeConvId)
         @php $activeConv = $conversations->firstWhere('id', $this->activeConvId); @endphp
         <div style="padding:16px;border-bottom:1px solid #E2E8F0;font-weight:700;font-size:14px;color:#0F172A;flex-shrink:0;">
