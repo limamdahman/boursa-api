@@ -132,7 +132,7 @@ class ChatController extends Controller
                 'id'              => $c->id,
                 'agency_id'       => $c->agency_id,
                 'agency'          => $c->agency
-                    ? ['id' => $c->agency->id, 'name' => $c->agency->name, 'logo_url' => $c->agency->logo_url, 'tier' => $c->agency->subscription_tier]
+                    ? ['id' => $c->agency->id, 'name' => $c->agency->name, 'logo_url' => $c->agency->logo_url, 'tier' => $c->agency->subscription_tier, 'is_verified' => $c->agency->isVerified()]
                     : ['id' => null, 'name' => 'Boursa', 'logo_url' => null, 'tier' => null],
                 'last_message'    => $c->lastMessage ? ['body' => $c->lastMessage->body] : null,
                 'last_message_at' => $c->last_message_at?->toIso8601String(),
