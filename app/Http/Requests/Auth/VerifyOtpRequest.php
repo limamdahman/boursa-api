@@ -18,6 +18,7 @@ class VerifyOtpRequest extends FormRequest
     {
         return [
             'phone' => ['required', 'string', 'max:30'],
+            'name' => ['nullable', 'string', 'max:150'],
             'code' => ['required', 'string', 'size:6'],
             'device_name' => ['nullable', 'string', 'max:100'],
         ];

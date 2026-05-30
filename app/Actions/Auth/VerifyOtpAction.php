@@ -20,9 +20,9 @@ final class VerifyOtpAction
      *
      * @return array{user: User, token: string, is_new: bool}
      */
-    public function execute(string $phoneE164, string $code, string $deviceName = 'mobile'): array
+    public function execute(string $phoneE164, string $code, string $deviceName = 'mobile', ?string $name = null): array
     {
-        return DB::transaction(function () use ($phoneE164, $code, $deviceName): array {
+        return DB::transaction(function () use ($phoneE164, $code, $deviceName, $name): array {
             $otp = OtpCode::where('phone', $phoneE164)
                 ->whereNull('consumed_at')
                 ->where('expires_at', '>', now())
@@ -53,7 +53,8 @@ final class VerifyOtpAction
 
             if (! $user) {
                 $user = User::create([
-                    'name' => 'Utilisateur '.substr($phoneE164, -4),
+                    // Vom Nutzer angegebener Name bei der Registrierung, sonst generischer Name
+                    'name' => ($name !== null && trim($name) !== '') ? trim($name) : 'Utilisateur '.substr($phoneE164, -4),
                     'phone' => $phoneE164,
                     'phone_verified_at' => now(),
                     'role' => UserRole::USER,

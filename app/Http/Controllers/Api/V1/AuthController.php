@@ -63,7 +63,8 @@ class AuthController extends Controller
             $result = $action->execute(
                 $phone,
                 (string) $request->input('code'),
-                (string) ($request->input('device_name') ?? 'mobile')
+                (string) ($request->input('device_name') ?? 'mobile'),
+                $request->input('name')
             );
         } catch (DomainException $e) {
             return response()->json([
