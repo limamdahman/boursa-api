@@ -118,6 +118,30 @@ class ChatController extends Controller
     }
 
     /** Liste des conversations de l'agence connectée */
+    // Konversationen des angemeldeten Nutzers (Privatkundenseite)
+    public function userConversations(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $conversations = Conversation::with(['agency', 'lastMessage'])
+            ->where('user_id', $user->id)
+            ->where('status', 'open')
+            ->orderByDesc('last_message_at')
+            ->get()
+            ->map(fn ($c) => [
+                'id'              => $c->id,
+                'agency_id'       => $c->agency_id,
+                'agency'          => $c->agency
+                    ? ['id' => $c->agency->id, 'name' => $c->agency->name, 'logo_url' => $c->agency->logo_url, 'tier' => $c->agency->subscription_tier]
+                    : ['id' => null, 'name' => 'Boursa', 'logo_url' => null, 'tier' => null],
+                'last_message'    => $c->lastMessage ? ['body' => $c->lastMessage->body] : null,
+                'last_message_at' => $c->last_message_at?->toIso8601String(),
+                'unread_count'    => $c->unreadForUser(),
+            ]);
+
+        return response()->json($conversations);
+    }
+
     public function agencyConversations(Request $request): JsonResponse
     {
         $user = $request->user();

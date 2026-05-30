@@ -185,6 +185,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/chat/conversations/{conversationId}/messages', [App\Http\Controllers\Api\ChatController::class, 'messages']);
         Route::post('/chat/conversations/{conversationId}/messages', [App\Http\Controllers\Api\ChatController::class, 'send']);
         Route::post('/chat/support', [App\Http\Controllers\Api\ChatController::class, 'getOrCreateSupport']);
+        Route::get('/chat/conversations', [App\Http\Controllers\Api\ChatController::class, 'userConversations']);
         Route::get('/chat/agency/conversations', [App\Http\Controllers\Api\ChatController::class, 'agencyConversations']);
     });
 });

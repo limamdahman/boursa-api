@@ -43,4 +43,13 @@ class Conversation extends Model
             ->whereNull('read_at')
             ->count();
     }
+
+    // Ungelesene Nachrichten aus Sicht des Nutzers (von der Agentur gesendet)
+    public function unreadForUser(): int
+    {
+        return $this->messages()
+            ->where('sender_type', 'agency')
+            ->whereNull('read_at')
+            ->count();
+    }
 }
