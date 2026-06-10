@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\Vehicle;
 use App\Policies\VehiclePolicy;
+use App\Services\Sms\InfobipSmsDriver;
 use App\Services\Sms\LogSmsDriver;
 use App\Services\Sms\SmsDriver;
 use App\Services\Sms\SmsManager;
@@ -24,6 +25,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(SmsDriver::class, function (): SmsDriver {
             return match (config('services.sms.driver', 'log')) {
                 'log' => new LogSmsDriver,
+                'infobip' => new InfobipSmsDriver(
+                    baseUrl: (string) config('services.sms.base_url'),
+                    apiKey: (string) config('services.sms.api_key'),
+                    sender: (string) config('services.sms.sender_id'),
+                ),
                 default => throw new InvalidArgumentException('Unsupported SMS driver'),
             };
         });

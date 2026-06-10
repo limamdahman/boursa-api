@@ -41,6 +41,7 @@ return [
         'driver' => env('SMS_PROVIDER', 'log'),
         'sender_id' => env('SMS_SENDER_ID', 'BOURSA'),
         'api_key' => env('SMS_API_KEY'),
+        'base_url' => env('SMS_BASE_URL'),
     ],
 
     'meta' => [
