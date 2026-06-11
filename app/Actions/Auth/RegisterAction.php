@@ -38,6 +38,16 @@ final class RegisterAction
 
             $user->syncRoles([UserRole::USER->value]);
 
+            // Si email fourni : envoyer la vérification, pas de token immédiat
+            if (! empty($data['email'])) {
+                $user->sendEmailVerificationNotification();
+                return [
+                    'user'                    => $user->load('agency'),
+                    'token'                   => null,
+                    'email_verification_sent' => true,
+                ];
+            }
+
             $token = $user->createToken($deviceName)->plainTextToken;
 
             return [

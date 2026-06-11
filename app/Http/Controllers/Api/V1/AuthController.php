@@ -104,8 +104,9 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'token' => $result['token'],
-            'user' => $result['user'],
+            'token'                   => $result['token'],
+            'user'                    => $result['user'],
+            'email_verification_sent' => $result['email_verification_sent'] ?? false,
         ], Response::HTTP_CREATED);
     }
 

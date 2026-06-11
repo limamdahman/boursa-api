@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -17,7 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     use HasApiTokens, HasFactory, HasRoles, HasUuid, Notifiable, SoftDeletes;
 
@@ -92,4 +93,12 @@ class User extends Authenticatable implements FilamentUser
 
         return false;
     }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        if ($this->email) {
+            $this->notify(new \App\Notifications\Auth\VerifyEmailNotification());
+        }
+    }
+
 }

@@ -190,3 +190,13 @@ Route::prefix('v1')->group(function () {
     });
 });
 
+
+Route::post('v1/auth/firebase/verify', [App\Http\Controllers\Api\V1\FirebaseAuthController::class, 'verify']);
+
+// Email verification
+Route::get('v1/auth/email/verify/{id}/{hash}', [App\Http\Controllers\Api\V1\EmailVerificationController::class, 'verify'])
+    ->middleware(['signed'])
+    ->name('verification.verify');
+
+Route::post('v1/auth/email/resend', [App\Http\Controllers\Api\V1\EmailVerificationController::class, 'resend'])
+    ->middleware(['throttle:6,1']);

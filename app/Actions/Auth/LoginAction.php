@@ -41,6 +41,11 @@ final class LoginAction
 
         RateLimiter::clear($rateKey);
 
+        // Bloquer si email non vérifié
+        if (str_contains($identifier, '@') && ! $user->hasVerifiedEmail()) {
+            throw new DomainException('Veuillez vérifier votre adresse email avant de vous connecter.');
+        }
+
         $token = $user->createToken($deviceName)->plainTextToken;
 
         return [
