@@ -30,7 +30,7 @@ final class RegisterAction
             $user = User::create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'email' => $data['email'] ?? null,
+                'email' => isset($data['email']) ? mb_strtolower($data['email']) : null,
                 'password' => Hash::make($data['password']),
                 'role' => UserRole::USER,
                 'language' => $data['language'] ?? 'fr',
